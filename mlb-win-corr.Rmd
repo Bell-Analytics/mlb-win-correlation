@@ -21,6 +21,12 @@ library(plotly)
 
 MLB Win Correlation
 =======================================================================
+Row
+-----------------------------------------------------------------------
+### Introduction
+The purpose of this shiny App is to explore corrlation of Major League Baseball Teams stats to wins. Throughout this app you will explore correlations between offensive and defensive stats to wins as well as to each other. Also you will see which teams are better at buying wins compared to others.
+
+The data represented is from 1985 to 2019 from www.seanlahman.com
 
 Row
 -----------------------------------------------------------------------
