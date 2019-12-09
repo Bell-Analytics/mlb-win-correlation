@@ -1,0 +1,257 @@
+---
+title: "MLB Win Correlations"
+author: "Werbell"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: scroll
+    theme: flatly
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+source("data_manip.R")
+library(corrplot)
+library(lattice)
+library(plotly)
+```
+
+
+MLB Win Correlation
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+### Overall MLB Win Correlation Matrix
+```{r, echo=FALSE}
+mlb_yealry_cxor_matrix <- cor(mlb_yearly_corplot, method="pearson" )
+renderPlot({
+  corrplot(mlb_yealry_cxor_matrix ,order="FPC",method = "ellipse"
+           ,tl.col="black", mar=c(1,1,3,0))
+  
+  corrplot(mlb_yealry_cxor_matrix,order="FPC",add=TRUE, type="lower",
+           method="number", number.font = 1, col="black"
+           ,number.cex=.75, diag=FALSE, tl.pos="n", cl.pos="n")
+})
+```
+
+### MLB Distribution of Wins since 1985
+```{r, echo = FALSE}
+renderPlotly({
+  ggplot(mlb_yearly_corplot, aes(x=W)) +
+    geom_density() +
+    labs(x="Wins", y = "Density")
+})
+```
+
+
+Row
+-----------------------------------------------------------------------
+### MLB Wins to Runs Correlation
+```{r, echo = FALSE}
+renderPlotly({
+  ggplot(mlb_yearly_corplot ,aes(x=W, y=R)) +
+    geom_point(shape = 21, fill = "red"
+               ,color = "black", size = 2) +
+    stat_smooth(method = lm
+                , color = "blue"
+                , fill = "cyan") +
+    labs(
+      x=  "Wins"
+      ,y = "Runs Scored")
+})
+```
+
+### MLB Offensive Stats ScatterPlot Matrix
+```{r, echo = FALSE}
+renderPlot({
+pairs(~.,data=mlb_hitting_yearly_cor_df%>%
+        select(W,BA,OPS,R,H,HR))
+})
+```
+
+
+Row
+-----------------------------------------------------------------------
+### MLB Wins to Earned Runs Correlation
+```{r, echo = FALSE}
+renderPlotly({
+  ggplot(mlb_yearly_corplot,aes(x=W, y=ERA)) +
+    geom_point(shape = 21, fill = "red"
+               ,color = "black", size = 2) +
+    stat_smooth(method = lm
+                , color = "blue"
+                , fill = "cyan") +
+    labs(
+      xaxis = list(title = "Wins")
+      ,yaxis = list(title = "Earned Run Average")
+    )
+})
+```
+
+### MLB Pitching Stats ScatterPlot Matrix
+```{r, echo = FALSE}
+renderPlot({
+pairs(~.,data=mlb_pitching_yearly_cor_df%>%
+        select(W,ERA,ER,WHIP,SO,SOBB))
+})
+```
+
+
+Row
+-----------------------------------------------------------------------
+### MLB Win vs Salary Correlation
+```{r, echo=FALSE}
+renderPlotly({
+  ggplot(
+    mlb_yearly_corplot,aes(x=W, y=salaryTeam)) +
+    geom_point(shape = 21, fill = "red"
+               ,color = "black", size = 2) +
+    stat_smooth(method = lm
+                , color = "darkgreen"
+                , fill = "lightgreen") +
+    labs(
+      x =  "Wins"
+      ,y =  "Salary")
+})
+```
+
+
+Team Win Correlation
+=======================================================================
+
+Inputs {.sidebar}
+-------------------------------------
+The data is a team by team yearly stats from 1985 to 2019. The dataset can be found at http://www.seanlahman.com/baseball-archive/statistics/ a part of the Lahman's Baseball Database.
+
+Below you can select which teams yearly stats you want to see. As well as filter which offensive and defensive stat you want to see in correlation to that teams wins.
+
+```{r,echo=FALSE}
+selectInput("mlbTeams"
+            ,label = h3("MLB Teams")
+            ,choices = unique(mlb_yearly_cor_df$franchID))
+
+hitting_choices <- list( 'BA', 'OPS', 'R'
+                         , 'H', 'HR') 
+selectInput("mlbHitting"
+            ,label = h3("Hitting Stats")
+            ,choices = hitting_choices
+)
+
+pitching_choices <- list('ERA','ER', 'WHIP'
+                          ,'SO', 'SOBB')
+selectInput("mlbPitching"
+            ,label = h3("Pitching Stats")
+            ,choices = pitching_choices
+            )
+
+
+```
+
+The code for this shiny app can be found in my GitHub page here:
+https://github.com/zw24code/mlb-win-correlation
+
+Row
+-----------------------------------------------------------------------
+### MLB Team Wins Per Year
+```{r, echo = FALSE}
+renderPlotly({
+  plot_ly(mlb_hitting_yearly_cor_df %>%
+  filter(mlb_hitting_yearly_cor_df$franchID == input$mlbTeams)
+  ,x = ~yearID, y= ~W
+  ,name = "Wins per Year"
+  ,type = "bar"
+  ,text = ~franchID
+  ) %>%
+    layout(
+      title = paste0(mlb_hitting_yearly_cor_df$franchID, " Wins per Year")
+      ,xaxis = list(title = "Year")
+      ,yaxis = list(title = "Wins")
+    )
+  
+})
+```
+
+Row
+-----------------------------------------------------------------------
+### Team Batting Correlation Matrix
+```{r, echo = FALSE}
+renderPlot({
+  splom(mlb_hitting_yearly_splom_df%>%
+  filter(mlb_hitting_yearly_cor_df$franchID == input$mlbTeams), as.matrix=TRUE
+        ,xlab='', pscale=0
+        ,varname.cex=0.8, axis.text.cex=0.6
+        ,axis.text.col="purple", axis.text.font=2
+        ,axis.line.tick=0.5 
+        )
+})
+```
+
+
+### Batting Correlation to Wins
+```{r, echo = FALSE}
+
+renderPlotly({
+  ggplot(mlb_hitting_yearly_cor_df %>%
+  filter(mlb_hitting_yearly_cor_df$franchID == input$mlbTeams)
+  ,aes_string(x="W", y=input$mlbHitting)) +
+    geom_point(shape = 21, fill = "red"
+               ,color = "black", size = 2) +
+    stat_smooth(method = lm
+                , color = "blue"
+                , fill = "cyan")
+})
+```
+
+
+Row
+-----------------------------------------------------------------------
+### Team Pitching Correlation Matrix
+```{r, echo = FALSE}
+
+renderPlot({
+  splom(mlb_pitching_yearly_splom_df %>%
+  filter(mlb_hitting_yearly_cor_df$franchID == input$mlbTeams), as.matrix=TRUE
+        ,xlab='', pscale=0
+        ,varname.cex=0.8, axis.text.cex=0.6
+        ,axis.text.col="purple", axis.text.font=2
+        ,axis.line.tick=0.5
+        )
+})
+```
+
+
+### Pitching Correlation to Wins
+```{r, echo = FALSE}
+renderPlotly({
+ ggplot(mlb_pitching_yearly_cor_df %>%
+  filter(mlb_pitching_yearly_cor_df$franchID == input$mlbTeams)
+  ,aes_string(x="W", y=input$mlbPitching)) +
+    geom_point(shape = 21, fill = "red"
+               ,color = "black", size = 2) +
+    stat_smooth(method = lm
+                , color = "blue"
+                , fill = "cyan")
+})
+```
+
+Row
+-----------------------------------------------------------------------
+###  MLB Team Win per Salary Correlation Graph
+```{r, echo = FALSE}
+renderPlotly({
+  ggplot(mlb_yearly_cor_df %>%
+  filter(mlb_yearly_cor_df$franchID == input$mlbTeams)
+  ,aes(x=W, y=salaryTeam)) +
+    geom_point(shape = 21, fill = "red"
+               ,color = "black", size = 2) +
+    stat_smooth(method = lm
+                , color = "darkgreen"
+                , fill = "lightgreen") +
+    labs(
+      x =  "Wins"
+      ,y =  "Salary")
+})
+```

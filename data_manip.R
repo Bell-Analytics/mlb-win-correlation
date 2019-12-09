@@ -47,3 +47,28 @@ mlb_yearly_data <- mlb_team_yearly_stat %>%
     BBNINE = 9*BBA/IPouts,
     SONINE= 9*SOA/IPouts,
     SOBB = SOA/BBA)
+
+
+#MLB win correlation dataset
+mlb_yearly_cor_df <- mlb_yearly_data %>%
+  select(teamID, franchID, yearID, salaryTeam, W
+         ,BA, OPS, R, H, HR
+         ,ERA, ER, WHIP,SO, SOBB)
+
+mlb_yearly_corplot <- mlb_yearly_cor_df %>%
+  select( W,salaryTeam,BA, OPS, R, H, HR
+          ,ERA, ER, WHIP,SO, SOBB)
+
+mlb_hitting_yearly_cor_df <- mlb_yearly_cor_df %>%
+  select(teamID, franchID, yearID, W
+         ,BA, OPS, R, H, HR)
+mlb_hitting_yearly_splom_df <- mlb_hitting_yearly_cor_df %>%
+  select(yearID, W ,BA, OPS, R, H, HR)
+
+mlb_pitching_yearly_cor_df <- mlb_yearly_cor_df %>%
+  select(teamID, franchID, yearID, W
+         ,ERA, ER, WHIP,SO, SOBB)
+
+mlb_pitching_yearly_splom_df <- mlb_pitching_yearly_cor_df %>%
+  select(yearID, W
+         ,ERA, ER, WHIP,SO, SOBB)
